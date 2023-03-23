@@ -107,13 +107,8 @@ def get_house_list(community_boundaries, year_range,
     # The datasource is from 2022.
     query = f"""
     SELECT 
-        MIN(pin) AS pin, 
-        addr, 
-        MIN(centroid_x) AS centroid_x,
-        MIN(centroid_y) AS centroid_y, 
-        MIN(2022 - age) AS year_built
-    GROUP BY addr 
-    HAVING 
+        *
+    WHERE
         centroid_y > "{miny}" 
         AND centroid_y < "{maxy}" 
         AND centroid_x > "{maxx}" 
