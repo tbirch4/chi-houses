@@ -118,7 +118,6 @@ def get_house_list(community_boundaries, year_range,
                   f' AND {2022 - year_range[0]} ')
     if results_limit:
         query += f'LIMIT {results_limit}'
-    print(query)
     r = requests.get(url, params={'$query': query})
     if len(r.json()) == 0:
         raise RuntimeError('API response had no results.')
