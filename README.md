@@ -12,6 +12,7 @@ pip install git+https://github.com/tbirch4/chi-houses.git
 ```
 
 Get houses data and images.
+
 ```python
 from chi_houses import Houses
 
