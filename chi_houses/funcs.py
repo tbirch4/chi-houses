@@ -108,16 +108,17 @@ def get_house_list(community_boundaries, year_range,
     query = f"""
     SELECT 
         *
-    WHERE
+    WHERE 
         centroid_y > "{miny}" 
         AND centroid_y < "{maxy}" 
         AND centroid_x > "{maxx}" 
         AND centroid_x < "{minx}" """
     if year_range:
-        query += (f'AND year_built BETWEEN {year_range[0]}'
-                  f' AND {year_range[1]} ')
+        query += (f'AND age BETWEEN {2022 - year_range[1]}'
+                  f' AND {2022 - year_range[0]} ')
     if results_limit:
         query += f'LIMIT {results_limit}'
+    print(query)
     r = requests.get(url, params={'$query': query})
     if len(r.json()) == 0:
         raise RuntimeError('API response had no results.')
