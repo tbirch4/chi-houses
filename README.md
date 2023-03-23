@@ -1,6 +1,6 @@
-# Chicago houses
+# Chicago houses 🏠
 
-Get a list of houses built in a certain time period in a list of Chicago neighborhoods (aka "community areas").
+Get data for Chicago houses, with filtering by build year and neighborhood.
 
 The module uses property data from the Cook County Assessor and community area boundaries from the Chicago data portal. It can also retrieve property images from the Assessor's website--these images are typically better than other sources (e.g. Google Maps Street View) at (a) directly framing each building, and (b) clearly showing each building's features.
 
