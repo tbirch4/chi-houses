@@ -18,7 +18,8 @@ class Houses:
         self.year_range = year_range
         self.house_list = None
 
-    def get_houses(self, results_limit: int = 100000, create_map: bool = False):
+    def get_houses(self, full_results: bool = False, results_limit: int = 100000, 
+                   create_map: bool = False):
         """Get residences in community areas.  
 
         Args:  
@@ -40,7 +41,7 @@ class Houses:
         """
         shape_df, bounds = get_community_boundaries(self.community_areas)
         house_list = get_house_list(bounds, self.year_range,
-                                    results_limit)
+                                    full_results, results_limit)
         house_list = process_house_list(house_list, bounds)
         if create_map:
             create_map(house_list, shape_df)
@@ -97,25 +98,43 @@ def get_community_boundaries(community_areas):
 
 
 def get_house_list(community_boundaries, year_range,
-                   results_limit):
+                   results_limit, full_results):
     """Get raw property data.
     """
+    # Note: the datasource is from 2022.
     url = 'https://datacatalog.cookcountyil.gov/resource/bcnq-qi2z.json'
     # Coords for box enclosing community area
     # The `x` values are negative here.
     minx, miny, maxx, maxy = community_boundaries.bounds
-    # The datasource is from 2022.
-    query = f"""
-    SELECT 
-        *
-    WHERE 
-        centroid_y > "{miny}" 
-        AND centroid_y < "{maxy}" 
-        AND centroid_x > "{maxx}" 
-        AND centroid_x < "{minx}" """
-    if year_range:
-        query += (f'AND age BETWEEN {2022 - year_range[1]}'
-                  f' AND {2022 - year_range[0]} ')
+    if full_results:
+        query = f"""
+        SELECT 
+            *
+        WHERE 
+            centroid_y > "{miny}" 
+            AND centroid_y < "{maxy}" 
+            AND centroid_x > "{maxx}" 
+            AND centroid_x < "{minx}" """ 
+        if year_range:
+            query += (f'AND age BETWEEN {2022 - year_range[1]}'
+                    f' AND {2022 - year_range[0]} ')
+    else:
+        query = f"""
+        SELECT 
+            MIN(pin) AS pin, 
+            addr, 
+            MIN(centroid_x) AS centroid_x,
+            MIN(centroid_y) AS centroid_y, 
+            MIN(2022 - age) AS year_built
+        GROUP BY addr 
+        HAVING 
+            centroid_y > "{miny}" 
+            AND centroid_y < "{maxy}" 
+            AND centroid_x > "{maxx}" 
+            AND centroid_x < "{minx}" """
+        if year_range:
+            query += (f'AND year_built BETWEEN {year_range[0]}'
+                    f' AND {year_range[1]} ')
     if results_limit:
         query += f'LIMIT {results_limit}'
     r = requests.get(url, params={'$query': query})
