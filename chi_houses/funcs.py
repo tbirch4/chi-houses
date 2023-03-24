@@ -10,59 +10,79 @@ import filetype
 
 
 class Houses:
-    """Get a list of houses built in a certain time period and area.
-    """
+    """Get data for Chicago houses.
 
+    This class includes methods to get property characteristics (e.g.
+    number of bedrooms, wall materials, etc.), images, and footprint
+    shapes of houses in Chicago. The results are filtered by community
+    area and build year.
+
+    Attributes:
+        community_areas: User-provided list of community areas
+        year_range: User-provided tuple of min and max build years
+        house_list: Geopandas GeoDataFrame with house data
+        community_boundaries: Shapely Multipolygon of community area shapes
+    """
     def __init__(self, community_areas: list, year_range: tuple = False):
+        """Instance of Houses class.
+
+        Args:
+            community_areas: A list of neighborhoods, e.g. ['Logan Square', 'Edgewater'].
+                See [Chicago community areas]
+                (https://en.wikipedia.org/wiki/Community_areas_in_Chicago).
+            year_range: A two-element tuple with min and max build years, e.g. (1890, 1910)
+        """
         self.community_areas = community_areas
         self.year_range = year_range
         self.house_list = None
+        self.community_boundaries = None
 
-    def get_houses(self, results_limit: int = 100000, create_map: bool = False):
-        """Get residences in community areas.  
+    def get_houses(self, results_limit: int = 100000, all_data: bool = False):
+        """Get a list of houses (with residential characteristics).
 
-        Args:  
-            community_areas:  
-                List of [Chicago community areas]
-                (https://en.wikipedia.org/wiki/Community_areas_in_Chicago)  
-            year_range:  
-                Two-element tuple with start and end build dates  
-            results_limit:  
-                Number of results to obtain from the Assessor API
-                (not necessarily the number of properties ultimately returned
-                by the function) 
-            create_map:
-                Output map image to current directory named 'map.jpg'
+        The data come from the Cook County Assessor. By default, this method
+        returns a subset of fields from the dataset: tax pin, address, and coordniates.
+        Setting `full_results` to `true` will return all fields, which include
+        property characteristics (e.g. number of bedrooms, wall materials, etc.).
+
+        Args:   
+            all_data: Return all fields, including property characteristics 
+                (e.g. number of bedrooms, wall materials, etc.). May reutrn multiple
+                rows per address.
+            results_limit: Max number of results to obtain from the Assessor API
+                (the actual number of houses may be smaller after filtering
+                by community area shape).
 
         Returns:  
-            results:
-                GeoPandas GeoDataFrame of house data
+            GeoPandas GeoDataFrame of house data
         """
-        shape_df, bounds = get_community_boundaries(self.community_areas)
-        house_list = get_house_list(bounds, self.year_range,
-                                    results_limit)
-        house_list = process_house_list(house_list, bounds)
-        if create_map:
-            create_map(house_list, shape_df)
+        boundaries, outer_boundary = get_community_boundaries(
+            self.community_areas)
+        self.community_boundaries = boundaries
+        house_list = get_house_list(outer_boundary, self.year_range,
+                                      results_limit, all_data)
+        house_list = process_house_list(
+            house_list, outer_boundary)
         self.house_list = house_list
         return house_list
 
     def get_images(self, output_path: str = 'img/'):
-        """
-        The Cook County Assessor makes photos of most residential properties available 
+        """Get house images.
+
+        The Cook County Assessor has photos of most residential properties available 
         on its website (e.g. https://www.cookcountyassessor.com/pin/13253100070000).
-        The photos are hosted in Amazon S3 bucket(s) and retrieved via structured
-        urls. This function retreives and saves those images if available.
+        The photos are retrieved via structured urls; this function retreives and 
+        saves those images if available, recording the paths to a new column in the
+        house list.
+
+        Note: please use this sparingly. This is basically scraping and your access 
+        may be rate limited or blocked if you aren't considerate.
 
         Args:
-            properties: 
-                List of dicts of house data from `properties.get_house_data()`
-            output_path (optional):  
-                Path where images are saved
+            output_path (optional): Set path where images are saved
 
         Returns:  
-            img_paths:  
-                List of dicts with house PINs and image paths
+            img_paths: GeoPandas GeoDataFrame of house data with image paths
         """
         # Create destination directory.
         os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -97,30 +117,43 @@ def get_community_boundaries(community_areas):
 
 
 def get_house_list(community_boundaries, year_range,
-                   results_limit):
+                   results_limit, all_data):
     """Get raw property data.
     """
+    # Note: the datasource is from 2022.
     url = 'https://datacatalog.cookcountyil.gov/resource/bcnq-qi2z.json'
     # Coords for box enclosing community area
     # The `x` values are negative here.
     minx, miny, maxx, maxy = community_boundaries.bounds
-    # The datasource is from 2022.
-    query = f"""
-    SELECT 
-        MIN(pin) AS pin, 
-        addr, 
-        MIN(centroid_x) AS centroid_x,
-        MIN(centroid_y) AS centroid_y, 
-        MIN(2022 - age) AS year_built
-    GROUP BY addr 
-    HAVING 
-        centroid_y > "{miny}" 
-        AND centroid_y < "{maxy}" 
-        AND centroid_x > "{maxx}" 
-        AND centroid_x < "{minx}" """
-    if year_range:
-        query += (f'AND year_built BETWEEN {year_range[0]}'
-                  f' AND {year_range[1]} ')
+    if all_data:
+        query = f"""
+        SELECT 
+            *
+        WHERE 
+            centroid_y > "{miny}" 
+            AND centroid_y < "{maxy}" 
+            AND centroid_x > "{maxx}" 
+            AND centroid_x < "{minx}" """
+        if year_range:
+            query += (f'AND age BETWEEN {2022 - year_range[1]}'
+                      f' AND {2022 - year_range[0]} ')
+    else:
+        query = f"""
+        SELECT 
+            MIN(pin) AS pin, 
+            addr, 
+            MIN(centroid_x) AS centroid_x,
+            MIN(centroid_y) AS centroid_y, 
+            MIN(2022 - age) AS year_built
+        GROUP BY addr 
+        HAVING 
+            centroid_y > "{miny}" 
+            AND centroid_y < "{maxy}" 
+            AND centroid_x > "{maxx}" 
+            AND centroid_x < "{minx}" """
+        if year_range:
+            query += (f'AND year_built BETWEEN {year_range[0]}'
+                      f' AND {year_range[1]} ')
     if results_limit:
         query += f'LIMIT {results_limit}'
     r = requests.get(url, params={'$query': query})
@@ -141,17 +174,6 @@ def process_house_list(house_list, shape):
         raise RuntimeError('No results in community boundaries.')
     gdf = gdf.drop(columns=['centroid_x', 'centroid_y'])
     return gdf
-
-
-def create_map(house_list, shape_df):
-    """Save map of houses.
-    """
-    fig, ax = plt.subplots(figsize=(15, 15))
-    shape_df.plot(ax=ax, color='red', alpha=0.5)
-    house_list.plot(ax=ax, color='blue', alpha=0.75)
-    #cx.add_basemap(ax=ax, zoom=16, crs=house_list.crs)
-    plt.axis('off')
-    plt.savefig('map.jpg')
 
 
 def get_image(pin, debug=False):
