@@ -17,8 +17,10 @@ class Houses:
         self.community_areas = community_areas
         self.year_range = year_range
         self.house_list = None
+        self.community_boundaries = None
+        self.community_outer_boundary = None
 
-    def get_houses(self, full_results: bool = False, results_limit: int = 100000, 
+    def get_houses(self, results_limit: int = 100000, full_results: bool = False, 
                    create_map: bool = False):
         """Get residences in community areas.  
 
@@ -39,12 +41,12 @@ class Houses:
             results:
                 GeoPandas GeoDataFrame of house data
         """
-        shape_df, bounds = get_community_boundaries(self.community_areas)
-        house_list = get_house_list(bounds, self.year_range,
-                                    full_results, results_limit)
-        house_list = process_house_list(house_list, bounds)
+        self.community_boundaries, self.community_outer_boundary = get_community_boundaries(self.community_areas)
+        house_list = get_house_list(self.community_outer_boundary, self.year_range,
+                                    results_limit, full_results)
+        house_list = process_house_list(house_list, self.community_outer_boundary)
         if create_map:
-            create_map(house_list, shape_df)
+            create_map(house_list, self.community_boundaries)
         self.house_list = house_list
         return house_list
 
