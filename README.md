@@ -30,7 +30,5 @@ houses.get_images()
 houses.house_list
 ```
 
-## Branches
-`main`: This branch returns only five fields: `pin`, `addr`, `centroid_x` (longitude), `centroid_y` (latitude), and `year_built`. It also includes only one `pin` per address (some addresses have multiple pins, such as apartment buildings).
-
-`full`: This branch returns every data point available from the Assessor table. The results are presented as-is, with no manipulation or filtering apart from limiting to the year range and community areas specified by the user.
+## Full residential characteristics data
+By default, `get_houses` functions as a list of addresses meeting the search parameters. It takes only a few columns from the data source: address, tax pin, year built, and coordinates. However, the data source has many additional columns that could be helpful for machine learning and other uses. To access the full data, set the `all_data` parameter of `get_houses` to `True`. You can find a full list of columns [here](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Property-/bcnq-qi2z).
