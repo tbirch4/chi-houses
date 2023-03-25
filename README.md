@@ -31,4 +31,4 @@ houses.house_list
 ```
 
 ## Full residential characteristics data
-By default, `get_houses` functions as a list of addresses meeting the search parameters. It takes only a few columns from the data source: address, tax pin, year built, and coordinates. However, the data source has many additional columns that could be helpful for machine learning and other uses. To access the full data, set the `all_data` parameter of `get_houses` to `True`. You can find a full list of columns [here](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Property-/bcnq-qi2z).
+By default, `get_houses` functions as a list of addresses meeting the search parameters. It takes only a few columns from the data source: address, tax pin, year built, and coordinates. However, the data source has many additional columns that could be helpful for machine learning and other applications. To access the full data, set the `all_data` parameter of `get_houses` to `True`. You can find a full list of columns [here](https://datacatalog.cookcountyil.gov/Property-Taxation/Assessor-Archived-05-11-2022-Residential-Property-/bcnq-qi2z).
