@@ -6,5 +6,5 @@ setup(name='chicagohouses',
       author='Travis Birch',
       author_email='aml-toolbox-feedback@googlegroups.com',
       packages=['chicagohouses', 'data'],
-      requires=['polars', 'geopandas']
+      install_requires=['polars', 'geopandas']
      )
