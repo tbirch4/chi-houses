@@ -1,12 +1,10 @@
-from setuptools import setup
+from distutils.core import setup
 
-setup(
-    name='chi_houses',
-    description='Find historic Chicago houses.',
-    version='0.0.1',
-    author='Travis Birch',
-    packages=['chi_houses'],
-    install_requires=['requests', 'matplotlib',
-                      'geopandas', 'filetype',
-                      'numpy']
-)
+setup(name='chicagohouses',
+      version='0.0.1',
+      description='Get a filterable list of houses in Chicago.',
+      author='Travis Birch',
+      author_email='aml-toolbox-feedback@googlegroups.com',
+      packages=['chicagohouses', 'data'],
+      requires=['polars', 'geopandas']
+     )
